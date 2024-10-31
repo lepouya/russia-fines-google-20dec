@@ -20,6 +20,9 @@ import { createRoot } from "react-dom/client";
 
 import { IonApp, setupIonicReact } from "@ionic/react";
 
+import AppEvents from "./components/AppEvents";
+import TabApp from "./components/TabApp";
+
 setupIonicReact();
 
 window.addEventListener(
@@ -30,9 +33,14 @@ window.addEventListener(
     document.body.appendChild(div);
     const root = createRoot(div);
 
+    await AppEvents.initialize();
+
     root.render(
       <StrictMode>
-        <IonApp></IonApp>
+        <IonApp>
+          <AppEvents />
+          <TabApp />
+        </IonApp>
       </StrictMode>,
     );
   },
