@@ -1,0 +1,54 @@
+{
+  "name": "russia-fines-google-20dec",
+  "version": "0.0.0",
+  "description": "A short incremental game about Russia fining Google $20dec",
+  "author": "Pouya Larjani <pouya.larjani@gmail.com> (https://github.com/lepouya)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lepouya/russia-fines-google-20dec.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lepouya/russia-fines-google-20dec/issues"
+  },
+  "homepage": "https://github.com/lepouya/russia-fines-google-20dec",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "update": "rm -rf node_modules && npm update"
+  },
+  "dependencies": {
+    "@capacitor/app": "latest",
+    "@capacitor/core": "latest",
+    "@capacitor/filesystem": "latest",
+    "@capacitor/keyboard": "latest",
+    "@capacitor/preferences": "latest",
+    "@capacitor/status-bar": "latest",
+    "@ionic/react": "latest",
+    "@ionic/react-router": "latest",
+    "@ionic/storage": "latest",
+    "break_eternity.js": "latest",
+    "ionicons": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router": "latest",
+    "react-router-dom": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/react-router": "latest",
+    "@types/react-router-dom": "latest",
+    "@vitejs/plugin-legacy": "latest",
+    "@vitejs/plugin-react": "latest",
+    "sass": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}

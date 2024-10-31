@@ -1,0 +1,7 @@
+{
+  "name": "russia-fines-google-20dec",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
