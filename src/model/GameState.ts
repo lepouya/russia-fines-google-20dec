@@ -2,7 +2,7 @@ import clamp from "../utils/clamp";
 import database from "../utils/database";
 import genRegistry from "../utils/registry";
 
-class GameState {
+export default class GameState {
   static singleton = new GameState();
   static registry = genRegistry(() => GameState.singleton);
 
@@ -220,5 +220,3 @@ class GameState {
 export function useGameState() {
   return GameState.registry.useHook();
 }
-
-export default GameState;
