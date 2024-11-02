@@ -18,7 +18,7 @@ export default function compile<Args extends unknown[], Res = unknown>(
   });
 
   const fnArgs = args.map((arg) => "___param_" + arg);
-  fnBody = `(function (${fnArgs.join(",")}) { return ${fnBody}; })`;
+  fnBody = `(function (${fnArgs.join(",")}) { return (${fnBody}); })`;
   fnBody = `(function (___globals) { return (${fnBody}); })`;
 
   let fn: any;

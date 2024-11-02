@@ -18,8 +18,8 @@ export default class GameState {
   saveFrequencySecs = 60;
 
   minUpdateSecs = 0.01;
-  maxUpdateSecs = 0.25;
-  maxTickSecs = 0.1;
+  maxUpdateSecs = 24 * 60 * 60;
+  maxTickSecs = 1;
 
   globalTimeDilation = 1.0;
   globalPaused = false;
