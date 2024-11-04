@@ -27,7 +27,6 @@ AppEvents.initialize = async function () {
   await database.initialize();
   MainTab.init();
   SettingsTab.init();
-  await GameState.load();
   await GameState.singleton.initAll();
-  GameState.singleton.tick(undefined, "init");
+  await GameState.load();
 };

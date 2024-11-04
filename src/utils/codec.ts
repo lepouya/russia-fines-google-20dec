@@ -25,7 +25,7 @@ export function stringify<T>(value: T, space?: string | number | undefined) {
 export function encode<T>(value: T, pretty = false) {
   const data = stringify(value, pretty ? 2 : undefined);
   if (!pretty) {
-    return window.btoa(encodeURIComponent(data));
+    return global.btoa(encodeURIComponent(data));
   }
   return data;
 }
@@ -36,7 +36,7 @@ export function decode<T>(data: string): T | undefined {
   }
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(window.atob(data)));
+    const parsed = JSON.parse(decodeURIComponent(global.atob(data)));
     if (parsed) {
       return parsed;
     }
@@ -45,6 +45,12 @@ export function decode<T>(data: string): T | undefined {
     const parsed = JSON.parse(data);
     if (parsed) {
       return parsed;
+    }
+  } catch {}
+  try {
+    const parsed = decodeURIComponent(global.atob(data));
+    if (parsed) {
+      return parsed as T;
     }
   } catch {}
 

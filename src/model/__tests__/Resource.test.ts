@@ -553,3 +553,83 @@ describe("Resource selling", () => {
     expect(N(r3.count)).to.be.approximately(0, 0.001);
   });
 });
+
+describe("Loading and saving", () => {
+  test("Simple load", () => {
+    Resource.reset();
+    Resource.loadAll({
+      r1: { name: "r1", count: "10" },
+      r2: { name: "r2", count: "20", extra: { test: "test" } },
+    });
+
+    expect(Resource.get("r1").name).to.equal("r1");
+    expect(N(Resource.get("r1").count)).to.equal(10);
+
+    expect(Resource.get("r2").name).to.equal("r2");
+    expect(N(Resource.get("r2").count)).to.equal(20);
+    expect(Resource.get("r2").extra["test"]).to.equal("test");
+  });
+
+  test("Reloading", () => {
+    Resource.reset();
+    Resource.loadAll({
+      r1: { name: "r1", count: "10" },
+      r2: { name: "r2", count: "20", extra: { test: "test" } },
+    });
+
+    Resource.loadAll({
+      r2: { name: "r2", count: "50", extra: { test2: "test2" } },
+      r3: { name: "r3", count: "100" },
+    });
+
+    expect(Resource.get("r1").name).to.equal("r1");
+    expect(N(Resource.get("r1").count)).to.equal(10);
+
+    expect(Resource.get("r2").name).to.equal("r2");
+    expect(N(Resource.get("r2").count)).to.equal(50);
+    expect(Resource.get("r2").extra["test"]).to.equal("test");
+    expect(Resource.get("r2").extra["test2"]).to.equal("test2");
+
+    expect(Resource.get("r3").name).to.equal("r3");
+    expect(N(Resource.get("r3").count)).to.equal(100);
+  });
+
+  test("Simple save", () => {
+    Resource.reset();
+    Resource.loadAll({
+      r1: { name: "r1", count: "10" },
+      r2: { name: "r2", count: "20", extra: { test: "test" } },
+    });
+
+    const saved = Resource.saveAll();
+
+    expect(saved.r1.name).to.equal("r1");
+    expect(saved.r1.count).to.equal("10");
+
+    expect(saved.r2.name).to.equal("r2");
+    expect(saved.r2.count).to.equal("20");
+    expect(saved.r2.extra.test).to.equal("test");
+  });
+
+  test("Load after save", () => {
+    Resource.reset();
+    Resource.loadAll({
+      r1: { name: "r1", count: "10" },
+      r2: { name: "r2", count: "20", extra: { test: "test" } },
+    });
+
+    const save1 = Resource.saveAll();
+    Resource.reset();
+    Resource.loadAll(save1);
+    const save2 = Resource.saveAll();
+
+    expect(save1).to.deep.equal(save2);
+
+    expect(Resource.get("r1").name).to.equal("r1");
+    expect(N(Resource.get("r1").count)).to.equal(10);
+
+    expect(Resource.get("r2").name).to.equal("r2");
+    expect(N(Resource.get("r2").count)).to.equal(20);
+    expect(Resource.get("r2").extra["test"]).to.equal("test");
+  });
+});

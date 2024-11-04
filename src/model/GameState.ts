@@ -1,6 +1,10 @@
+import Decimal from "break_eternity.js";
+
 import clamp from "../utils/clamp";
 import database from "../utils/database";
+import { FormatOptions } from "../utils/format";
 import genRegistry from "../utils/registry";
+import Resource from "./Resource";
 
 export default class GameState {
   static singleton = new GameState();
@@ -8,6 +12,7 @@ export default class GameState {
 
   constructor(state?: Partial<GameState> | string) {
     GameState.singleton = this;
+    Resource.globalSettings = this;
     this.load(state);
   }
 
@@ -21,10 +26,8 @@ export default class GameState {
   maxUpdateSecs = 24 * 60 * 60;
   maxTickSecs = 1;
 
-  globalTimeDilation = 1.0;
-  globalPaused = false;
-
-  numberFormat = "Standard";
+  timeDilation = 1.0;
+  simulationPaused = false;
 
   /// Execution information
 
@@ -41,11 +44,24 @@ export default class GameState {
     {
       lastTick: number;
       lastDelta: number;
-      lastResult: any[];
+      lastResult: Record<string, Decimal>;
       tps: number;
       fps: number;
     }
   > = {};
+
+  /// Resource parameters
+
+  resources: Record<string, Partial<Resource>> = Resource.ALL;
+
+  formatOptions: Partial<FormatOptions> = {};
+
+  gainFactor = 1;
+  costFactor = 1;
+  sellRatio = 1;
+
+  rateUpdateSecs = 0.25;
+  rateUpdateEMAFactor = 0.25;
 
   /////////////
 
@@ -106,6 +122,8 @@ export default class GameState {
     for (k in state) {
       if (state[k] == undefined || state[k] == null) {
         continue;
+      } else if (k === "resources") {
+        Resource.loadAll(state.resources || {});
       } else if (typeof this[k] === "object" && typeof state[k] === "object") {
         Object.assign((this as any)[k], state[k]);
       } else {
@@ -118,10 +136,12 @@ export default class GameState {
   }
 
   load(state?: Partial<GameState> | string): this {
-    if (!state) {
-      return this;
-    } else if (typeof state === "string") {
+    if (typeof state === "string") {
       return this.load(JSON.parse(state));
+    } else if (!state) {
+      state = {};
+    } else if (typeof state !== "object") {
+      return this;
     }
 
     this.set(state);
@@ -133,7 +153,8 @@ export default class GameState {
   save(): Partial<GameState> {
     this.lastSaved = Date.now();
     GameState.registry.signal();
-    return this;
+
+    return { ...this, resources: Resource.saveAll() };
   }
 
   tick(
@@ -141,38 +162,45 @@ export default class GameState {
     source: string = "unknown",
     onSave?: (settings?: this) => void,
     onRender?: (settings?: this) => void,
-  ): any[] {
+  ): Record<string, Decimal> {
     // Figure out how long it's been since last tick
     const lastTick = this.lastTick ?? now;
     let dt = clamp((now - lastTick) / 1000, 0, this.maxUpdateSecs);
+    const epoch = now - dt * 1000;
     if (dt < this.minUpdateSecs && this.lastTick != undefined) {
-      return [];
+      return {};
     }
 
-    this.lastTick = now;
-    const epoch = now - dt * 1000;
-
     // tick all sources
-    const results: Record<string, any[]> = {};
-    const tickScale = 1 / this.globalTimeDilation;
+    let results: Record<string, Decimal> = {};
+    const tickScale = 1 / this.timeDilation;
     const tps = [dt, 1];
     while (dt > 0) {
       const tick = clamp(dt, this.minUpdateSecs, this.maxTickSecs);
       // tps[1]++;
       dt -= tick;
+      results = Resource.tickAll(
+        this.simulationPaused ? 0 : tick * tickScale,
+        source,
+        results,
+      );
+
       if (source === "tick") {
-        this.tickAll(this.globalPaused ? 0 : tick * tickScale);
+        this.tickAll(this.simulationPaused ? 0 : tick * tickScale);
       }
     }
 
+    const ema = Resource.globalSettings.rateUpdateEMAFactor || 0.25;
+
     // Update execution status
+    this.lastTick = now;
     this.execution[source] = {
       lastTick: now,
       lastDelta: (now - epoch) / 1000,
-      lastResult: Object.values(results)
-        .flat()
-        .filter((value, index, self) => self.indexOf(value) === index),
-      tps: (this.execution[source]?.tps || 0) * 0.8 + (tps[1] / tps[0]) * 0.2,
+      lastResult: results,
+      tps:
+        (this.execution[source]?.tps || 0) * (1 - ema) +
+        (tps[1] / tps[0]) * ema,
       fps: this.execution[source]?.fps || 0,
     };
 
@@ -196,8 +224,8 @@ export default class GameState {
       this.lastTick - this.lastRender >= 1000.0 / this.rendersPerSec
     ) {
       this.execution[source].fps =
-        (this.execution[source].fps || 0) * 0.8 +
-        (1000.0 / (this.lastTick - this.lastRender)) * 0.2;
+        (this.execution[source].fps || 0) * (1 - ema) +
+        (1000.0 / (this.lastTick - this.lastRender)) * ema;
       this.lastRender = this.lastTick;
       onRender(this);
     }

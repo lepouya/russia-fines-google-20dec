@@ -4,7 +4,7 @@ import Notation from "./notation";
 
 export default function format(
   value?: DecimalSource | Date | undefined | null,
-  options?: NumberOptions & TimeOptions & WordOptions,
+  options?: FormatOptions,
 ): string {
   if (value == null || value == undefined || typeof value === "string") {
     return format.word(value ?? undefined, options);
@@ -13,11 +13,15 @@ export default function format(
   } else if (value instanceof Decimal || typeof value === "number") {
     return format.number(value, options);
   } else {
-    return "";
+    return ((value as any) || "").toString();
   }
 }
 
-type NumberOptions = {
+export type FormatOptions = NumberFormatOptions &
+  TimeFormatOptions &
+  WordFormatOptions;
+
+export type NumberFormatOptions = {
   notation?: Notation | string;
   len?: "tiny" | "short" | "long";
   prec?: number;
@@ -26,7 +30,10 @@ type NumberOptions = {
   alwaysShowSign?: boolean;
 };
 
-format.number = function (num: DecimalSource, options?: NumberOptions): string {
+format.number = function (
+  num: DecimalSource,
+  options?: NumberFormatOptions,
+): string {
   const prec = options?.prec ?? 0;
   const smallPrec = options?.smallPrec ?? prec;
   const expPrec =
@@ -49,7 +56,7 @@ format.number = function (num: DecimalSource, options?: NumberOptions): string {
   return r;
 };
 
-type TimeOptions = {
+export type TimeFormatOptions = {
   len?: "tiny" | "short" | "long";
   millis?: boolean;
   epoch?: number;
@@ -63,7 +70,7 @@ type TimeOptions = {
   ago?: string;
 };
 
-format.time = function (time: number, options?: TimeOptions): string {
+format.time = function (time: number, options?: TimeFormatOptions): string {
   const len = options?.len ?? "long";
   const sep = options?.sep ?? len === "long" ? ", " : ":";
   const lastSep =
@@ -167,7 +174,7 @@ format.time = function (time: number, options?: TimeOptions): string {
   return r;
 };
 
-type WordOptions = {
+export type WordFormatOptions = {
   name?: string;
   count?: number;
   singularName?: string;
@@ -179,7 +186,7 @@ type WordOptions = {
   capitalize?: boolean;
 };
 
-format.word = function (word?: string, options?: WordOptions): string {
+format.word = function (word?: string, options?: WordFormatOptions): string {
   if (!word) {
     word =
       (Math.abs(Math.abs(options?.count ?? 0) - 1) <=

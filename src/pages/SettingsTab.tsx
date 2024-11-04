@@ -147,6 +147,7 @@ function AppDataPanel() {
 
 function NumberFormatPanel() {
   const settings = useGameState();
+  const defaultNotation = Notation.get(settings.formatOptions.notation);
 
   return (
     <IonCard>
@@ -163,18 +164,20 @@ function NumberFormatPanel() {
         <IonRow>
           <IonCol size="12">
             <IonText>Current number format is </IonText>
-            <IonText color="primary">
-              {Notation.get(settings.numberFormat).name}
-            </IonText>
+            <IonText color="primary">{defaultNotation.name}</IonText>
           </IonCol>
         </IonRow>
         <IonRow>
           {Object.values(Notation.all).map((notation) => (
             <IonCol size="6" key={notation.name}>
               <IonButton
-                onClick={() => settings.set({ numberFormat: notation.name })}
+                onClick={() =>
+                  settings.set({
+                    formatOptions: { notation: notation.name },
+                  })
+                }
                 color={
-                  settings.numberFormat === notation.name
+                  defaultNotation.name === notation.name
                     ? "secondary"
                     : "primary"
                 }
