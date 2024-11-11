@@ -55,6 +55,7 @@ export default class GameState {
   resources: Record<string, Partial<Resource>> = Resource.ALL;
 
   formatOptions: Partial<FormatOptions> = {};
+  buyAmount: string = "+1";
 
   gainFactor = 1;
   costFactor = 1;
