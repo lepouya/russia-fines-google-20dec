@@ -4,6 +4,7 @@ import clamp from "../utils/clamp";
 import { decode } from "../utils/codec";
 import compile from "../utils/compile";
 import format, { FormatOptions } from "../utils/format";
+import genRegistry from "../utils/registry";
 
 export default class Resource {
   /** Resource name */
@@ -84,12 +85,19 @@ export default class Resource {
     [key: string]: any;
   } = {};
 
+  // Registries
+  public readonly registry = genRegistry(this);
+  static readonly registry = genRegistry(Resource.ALL);
+
   constructor(name: string) {
     this.name = name;
     if (Resource.ALL[name]) {
       return Resource.ALL[name];
+    } else if (name) {
+      Resource.ALL[name] = this;
+      Resource.registry.signal();
+      this.registry.signal();
     }
-    Resource.ALL[name] = this;
   }
 
   /** Resolve a resource from possibly incomplete information */
@@ -118,7 +126,7 @@ export default class Resource {
       Resource.ALL[res.name] = res;
     }
 
-    if (typeof props !== "string") {
+    if (props && typeof props !== "string" && Object.keys(props).length > 0) {
       // Copy properties
       let k: keyof Resource;
       for (k in props) {
@@ -172,13 +180,20 @@ export default class Resource {
       }
     }
 
+    this.registry.signal();
+    Resource.registry.signal();
     return res;
   }
 
   /** Reset the state of all resources to undefined */
   static reset() {
     const toDelete = Object.keys(Resource.ALL);
-    toDelete.forEach((name) => delete Resource.ALL[name]);
+    toDelete.forEach((name) => {
+      Resource.ALL[name].registry.signal();
+      delete Resource.ALL[name];
+    });
+    this.registry.signal();
+    Resource.registry.signal();
   }
 
   /**
@@ -336,9 +351,9 @@ export default class Resource {
     resources = resources.filter((res) => !res.locked && !res.disabled);
 
     // Keep a cache of current values for all resources so we can tell what changed
-    const cache: Record<string, Decimal> = {};
-    resources.forEach((res) => {
-      cache[res.name] = res.count;
+    const cache: Record<number, Decimal> = {};
+    resources.forEach((res, idx) => {
+      cache[idx] = res.count;
     });
 
     // Tick all resources that are eligible
@@ -365,10 +380,10 @@ export default class Resource {
     });
 
     // Figure out the cumulative results of changed resources
-    resources.forEach((res) => {
-      cache[res.name] = res.count.minus(cache[res.name] ?? 0);
-      if (cache[res.name].neq(0)) {
-        cumulativeResults[res.name] = cache[res.name].add(
+    resources.forEach((res, idx) => {
+      cache[idx] = res.count.minus(cache[idx] ?? 0);
+      if (cache[idx].neq(0)) {
+        cumulativeResults[res.name] = cache[idx].add(
           cumulativeResults[res.name] ?? Decimal.dZero,
         );
         if (cumulativeResults[res.name].eq(0)) {
@@ -376,6 +391,19 @@ export default class Resource {
         }
       }
     });
+
+    // Signal all resources that have changed
+    let hasChanges = false;
+    resources.forEach((res, idx) => {
+      if (cache[idx].neq(0)) {
+        res.onChange?.(res.count, source);
+        res.registry.signal();
+        hasChanges = true;
+      }
+    });
+    if (hasChanges) {
+      Resource.registry.signal();
+    }
 
     return cumulativeResults;
   }
@@ -458,10 +486,10 @@ export default class Resource {
     name?: string;
     icon?: string;
     value?: string;
-    valueSign?: string;
+    valueSign?: "positive" | "negative" | "zero";
     max?: string;
     rate?: string;
-    rateSign?: string;
+    rateSign?: "positive" | "negative" | "zero";
     extras: Record<string, string | undefined>;
   } {
     options = {
@@ -762,7 +790,10 @@ export default class Resource {
       value = Decimal.max(value, this.minCount);
     }
     this.count = Decimal.fromValue_noAlloc(value);
+
     this.onChange?.(this.count, source);
+    this.registry.signal();
+    Resource.registry.signal();
 
     return this.count;
   }
@@ -902,6 +933,15 @@ export default class Resource {
   }
 }
 
+export function useResource(resource?: string | Partial<Resource>) {
+  const res = Resource.get(resource || {});
+  return res.registry.useHook();
+}
+
+export function useAllResources() {
+  return Resource.registry.useHook();
+}
+
 export type DisplayStyle = "none" | "number" | "time" | "percentage";
 
 export type PurchaseStyle =
@@ -935,8 +975,8 @@ export interface PurchaseCost<
   cost: ResourceCount<Resolved>[];
 }
 
-const _signs = <const>{
+const _signs = {
   [-1]: "negative",
   [0]: "zero",
   [1]: "positive",
-};
+} as const;
