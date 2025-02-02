@@ -5,7 +5,7 @@ import { IonButton } from "@ionic/react";
 
 import GameState from "../model/GameState";
 import Resource, { ResourceCount, useResource } from "../model/Resource";
-import className from "../utils/classname";
+import className from "../utils/className";
 import Icon from "./Icon";
 
 export type BuyButtonProps = {

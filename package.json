@@ -17,7 +17,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
+    "preview": "npm run debug && vite preview",
+    "debug": "cross-env NODE_ENV=development tsc && vite build --mode development",
+    "release": "cross-env NODE_ENV=production tsc && vite optimize --mode production && vite build --mode production",
+    "github-release": "npm run release && vite build --mode production --emptyOutDir --outDir ../lepouya.github.io/russia-fines-google-20dec/",
     "test": "vitest",
     "update": "rm -rf node_modules && npm update"
   },
@@ -46,6 +49,7 @@
     "@types/react-router-dom": "latest",
     "@vitejs/plugin-legacy": "latest",
     "@vitejs/plugin-react": "latest",
+    "cross-env": "latest",
     "sass": "latest",
     "typescript": "latest",
     "vite": "latest",

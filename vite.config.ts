@@ -6,13 +6,14 @@ import react from "@vitejs/plugin-react";
 import pkg from "./package.json";
 
 const externals = {
-  capacitor: /node_modules\/@capacitor/,
-  ionic: /node_modules\/@ionic/,
-  ionicons: /node_modules\/ionicons/,
-  react: /node_modules\/(react|scheduler)/,
+  react: /react(?!.*css)/,
+  capacitor: /@capacitor/,
+  ionic: /@ionic/,
+  ionicons: /ionicons/,
 };
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: "",
   plugins: [react(), legacy()],
   define: {
     ...Object.fromEntries(
@@ -26,9 +27,15 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1024,
+    sourcemap: mode === "development",
+    minify: mode === "production",
+    cssMinify: mode === "production",
     rollupOptions: {
       output: {
         manualChunks: function (id) {
+          if (!id.includes("node_modules")) {
+            return;
+          }
           for (let [name, regex] of Object.entries(externals)) {
             if (regex.test(id)) {
               return name;
@@ -42,4 +49,4 @@ export default defineConfig({
     globals: true,
     passWithNoTests: true,
   },
-});
+}));

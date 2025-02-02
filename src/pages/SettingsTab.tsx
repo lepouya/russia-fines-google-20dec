@@ -18,22 +18,20 @@ import {
 } from "@ionic/react";
 
 import TabApp from "../components/TabApp";
-import GameState, { useGameState } from "../model/GameState";
+import GameState from "../model/GameState";
 import { decode, encode } from "../utils/codec";
 import database from "../utils/database";
 import format from "../utils/format";
 import Notation from "../utils/notation";
 
 export default function SettingsTab() {
-  const debug = isDebug();
-
   return (
     <IonGrid>
       <AppDataPanel />
       <NumberFormatPanel />
       <AdvancedPanel />
       <ResetPanel />
-      {debug && <DebugPanel />}
+      <DebugPanel />
     </IonGrid>
   );
 }
@@ -49,9 +47,8 @@ SettingsTab.init = () => {
 };
 
 function AppDataPanel() {
-  const settings = useGameState();
+  const settings = GameState.useHook();
   const [textContents, setTextContents] = useState("");
-  const debug = true; // Useful for now
 
   return (
     <IonCard>
@@ -122,7 +119,9 @@ function AppDataPanel() {
           </IonCol>
           <IonCol size="6">
             <IonButton
-              onClick={() => setTextContents(encode(settings.save(), debug))}
+              onClick={() =>
+                setTextContents(encode(settings.save(), GameState.isDebug()))
+              }
               expand="block"
             >
               Export Text
@@ -146,7 +145,7 @@ function AppDataPanel() {
 }
 
 function NumberFormatPanel() {
-  const settings = useGameState();
+  const settings = GameState.useHook();
   const defaultNotation = Notation.get(settings.formatOptions.notation);
 
   return (
@@ -216,7 +215,7 @@ function NumberFormatPanel() {
 }
 
 function AdvancedPanel() {
-  const settings = useGameState();
+  const settings = GameState.useHook();
   const [tps, setTps] = useState(settings.ticksPerSec);
   const [fps, setFps] = useState(settings.rendersPerSec);
   const [sps, setSps] = useState(settings.saveFrequencySecs);
@@ -397,8 +396,8 @@ function ResetPanel() {
 }
 
 function DebugPanel() {
-  const settings = useGameState();
-  if (!window.location.search.toLowerCase().includes("debug")) {
+  const settings = GameState.useHook();
+  if (!GameState.isDebug()) {
     return null;
   }
 
@@ -430,7 +429,6 @@ function DebugPanel() {
 
 function saveFile() {
   const settings = GameState.singleton;
-  const debug = window.location.search.toLowerCase().includes("debug");
   const name = (import.meta.env.NAME as string).replace(/\W/g, "_");
   const version = (import.meta.env.VERSION as string).replace(/\W/g, "_");
   const date = new Date()
@@ -439,7 +437,7 @@ function saveFile() {
     .trim()
     .replace(/\D/g, "-");
   const fileName = `${name}-v${version}-${date}`;
-  const fileData = encode(settings.save(), debug);
+  const fileData = encode(settings.save(), GameState.isDebug());
   const contents = new Blob([fileData], { type: "text/plain" });
 
   const url = URL.createObjectURL(contents);
@@ -484,10 +482,6 @@ function loadFile() {
 
 function reload() {
   const history = createBrowserHistory();
-  history.push("/");
+  history.push("#/");
   window.location.reload();
-}
-
-function isDebug() {
-  return window.location.search.toLowerCase().includes("debug");
 }

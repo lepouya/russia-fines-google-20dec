@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 
-import GameState, { useGameState } from "../model/GameState";
+import GameState from "../model/GameState";
 import MainTab from "../pages/MainTab";
 import SettingsTab from "../pages/SettingsTab";
 import database from "../utils/database";
 import shortcut from "../utils/shortcut";
 
 export default function AppEvents() {
-  const settings = useGameState();
+  const settings = GameState.useHook();
 
   useEffect(() => {
     shortcut.addEventListeners();
@@ -25,8 +25,7 @@ export default function AppEvents() {
 
 AppEvents.initialize = async function () {
   await database.initialize();
-  MainTab.init();
-  SettingsTab.init();
+  await Promise.all([MainTab.init(), SettingsTab.init()]);
   await GameState.singleton.initAll();
   await GameState.load();
 };

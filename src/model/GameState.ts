@@ -66,6 +66,14 @@ export default class GameState {
 
   /////////////
 
+  static isDebug(): boolean {
+    return window.location.href.toLowerCase().includes("debug");
+  }
+
+  static useHook() {
+    return GameState.registry.useHook();
+  }
+
   static set(state: Partial<GameState>) {
     return GameState.singleton.set(state);
   }
@@ -82,12 +90,14 @@ export default class GameState {
   static async save() {
     GameState.singleton.tick(undefined, "save");
     const res = await database.write("Settings", GameState.singleton.save());
+    GameState.registry.signal();
     return res;
   }
 
   static async load() {
     GameState.singleton.load(await database.read("Settings"));
     GameState.singleton.tick(undefined, "load");
+    GameState.registry.signal();
     return GameState.singleton;
   }
 
@@ -137,24 +147,19 @@ export default class GameState {
   }
 
   load(state?: Partial<GameState> | string): this {
-    if (typeof state === "string") {
-      return this.load(JSON.parse(state));
-    } else if (!state) {
-      state = {};
-    } else if (typeof state !== "object") {
+    if (!state || typeof state !== "object") {
       return this;
+    } else if (typeof state === "string") {
+      return this.load(JSON.parse(state));
     }
 
     this.set(state);
     this.lastLoaded = Date.now();
-    GameState.registry.signal();
     return this;
   }
 
   save(): Partial<GameState> {
     this.lastSaved = Date.now();
-    GameState.registry.signal();
-
     return { ...this, resources: Resource.saveAll() };
   }
 
@@ -244,8 +249,4 @@ export default class GameState {
     // Tick actions here
     return dt;
   }
-}
-
-export function useGameState() {
-  return GameState.registry.useHook();
 }

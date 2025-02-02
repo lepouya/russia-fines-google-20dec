@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import { IonCol, IonRow } from "@ionic/react";
 
 import Resource, { useResource } from "../model/Resource";
-import className from "../utils/classname";
+import className from "../utils/className";
 import Icon from "./Icon";
 
 export type DisplayResourceProps = {

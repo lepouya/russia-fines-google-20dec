@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ComponentType, Fragment, ReactNode } from "react";
 import { Redirect, Route } from "react-router-dom";
 
 import {
@@ -9,12 +9,12 @@ import {
   IonPage,
   IonRouterOutlet,
   IonTabBar,
-  IonTabButton,
-  IonTabs,
+  IonTabButton as IonTabButton_FIXME,
+  IonTabs as IonTabs_FIXME,
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import { IonReactRouter } from "@ionic/react-router";
+import { IonReactHashRouter } from "@ionic/react-router";
 
 import genRegistry from "../utils/registry";
 import Icon from "./Icon";
@@ -22,6 +22,7 @@ import Icon from "./Icon";
 type TabProps = {
   path: string;
   content: ReactNode;
+  alwaysMounted?: boolean;
 
   icon?: string;
   label?: string;
@@ -34,7 +35,7 @@ export default function TabApp() {
   const tabs = TabApp.useTabs();
 
   return (
-    <IonReactRouter>
+    <IonReactHashRouter>
       <IonTabs>
         <IonRouterOutlet>
           {tabs.map((tab) => (
@@ -64,7 +65,12 @@ export default function TabApp() {
                     </IonChip>
                   </IonToolbar>
                 </IonHeader>
-                <IonContent>{tab.content}</IonContent>
+                <IonContent id="tab-contents">{tab.content}</IonContent>
+                {tabs
+                  .filter((t) => t.alwaysMounted && t !== tab)
+                  .map((t) => (
+                    <Fragment key={`page-${t.path}`}>{t.content}</Fragment>
+                  ))}
               </IonPage>
             </Route>
           ))}
@@ -92,9 +98,12 @@ export default function TabApp() {
           )}
         </IonTabBar>
       </IonTabs>
-    </IonReactRouter>
+    </IonReactHashRouter>
   );
 }
+
+const IonTabs = IonTabs_FIXME as ComponentType<any>;
+const IonTabButton = IonTabButton_FIXME as ComponentType<any>;
 
 const registry = genRegistry<Record<string, TabProps>>({});
 
